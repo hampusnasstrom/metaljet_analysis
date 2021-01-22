@@ -65,5 +65,14 @@ def baseline_als(y, lam, p, niter=10):
 
 
 def two_theta_conversion(two_theta, old_energy, new_energy):
-    return 360 * np.arcsin(np.sin(np.pi * two_theta / 360) * old_energy / new_energy) / np.pi
+    return 2 * 180 * np.arcsin(np.sin(np.pi * two_theta / 2 / 180) * old_energy / new_energy) / np.pi
 
+
+def q_to_two_theta(q, energy):
+    return 2 * 180 * np.arcsin(q * energy_to_wavelength(energy) / 4 / np.pi) / np.pi
+
+
+def energy_to_wavelength(energy):
+    h = 4.135667696e-15  # eV * s
+    c = 299792458e9  # nm / s
+    return h * c / energy
