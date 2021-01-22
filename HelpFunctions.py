@@ -62,3 +62,8 @@ def baseline_als(y, lam, p, niter=10):
         z = spsolve(Z, np.multiply(w, y))
         w = np.multiply(p, (y > z)) + np.multiply((1 - p), (y < z))
     return z
+
+
+def two_theta_conversion(two_theta, old_energy, new_energy):
+    return 360 * np.arcsin(np.sin(np.pi * two_theta / 360) * old_energy / new_energy) / np.pi
+
