@@ -8,7 +8,10 @@ import re
 import warnings
 import matplotlib.pyplot as plt
 
+from matplotlib import use
 from HelpFunctions import progress, extend_mesh
+
+use('Qt5Agg')
 
 
 def load_patterns(directory: str) -> pd.DataFrame:

@@ -1,19 +1,24 @@
 import os
 import warnings
+import sys
 
 import fabio
 import numpy as np
 import pandas as pd
 from os import path
+import matplotlib.pyplot as plt
 
 import pyFAI
 
-from HelpFunctions import progress
+from matplotlib import use
+from HelpFunctions import progress, extend_mesh
+
+use('Qt5Agg')
 
 
 def integrate_data(directory: str, poni: str, flat: str = None, mask: str = None) -> pd.DataFrame:
     """
-    Function for loading all integrated patterns in a directory
+    Function for integrating all images in a directory
 
     :param directory: Path to directory from which to load the patterns
     :type directory: str
@@ -45,15 +50,36 @@ def integrate_data(directory: str, poni: str, flat: str = None, mask: str = None
     times = log['Time '].values
     data = []
     time = []
-    q = np.loadtxt(path.join(directory, 'image_%05d_integrated.dat' % 1))[:, 0]
+    frame = fabio.open(path.join(directory, 'image_%05d.tif' % 1)).data
+    q = ai.integrate1d(data=frame, npt=2048, unit="q_nm^-1")[0]
     for idx, measurement in enumerate(log['measurement '].values):
         progress(idx, n_files, status='reading files')
-        try:
-            data.append(np.loadtxt(path.join(directory, 'image_%05d_integrated.dat' % measurement))[:, 1])
-            time.append(pd.to_datetime(dates[idx] + ' ' + times[idx]))
-        except OSError:
-            message = 'Image %d has no integrated data' % measurement
-            warnings.warn(message)
+        frame = fabio.open(path.join(directory, 'image_%05d.tif' % measurement)).data
+        data.append(ai.integrate1d(data=frame,
+                                   mask=mask,
+                                   npt=2048,
+                                   flat=flatfield,
+                                   unit="q_nm^-1"
+                                   )[1])
+        time.append(pd.to_datetime(dates[idx] + ' ' + times[idx]))
     progress(1, 1, status='done')
     df = pd.DataFrame(data=data, index=time, columns=q)
     return df
+
+
+if __name__ == "__main__":
+    args = {'directory': sys.argv[1]}
+    name = os.path.split(args['directory'])[1]
+    args['poni'] = os.path.join(args['directory'], name+'.poni')
+    # args['flat'] = os.path.join(args['directory'], name + '_flat.tif')
+    args['flat'] = 'None'
+    args['mask'] = os.path.join(args['directory'], name + '_mask.edf')
+    patterns = integrate_data(**args)
+
+    fig, ax = plt.subplots()
+    xrd_datetimes = patterns.index.values
+    t_mesh = extend_mesh(xrd_datetimes - xrd_datetimes[0]).astype(float) * 1e-9
+    q_mesh = extend_mesh(patterns.columns.values.astype(float))
+    ax.pcolormesh(t_mesh, q_mesh, patterns.values.T, cmap='magma')
+    ax.set_xlabel('Time / s')
+    ax.set_ylabel(r'Scattering vector $q$ / nm$^{-1}$')

@@ -75,4 +75,13 @@ def q_to_two_theta(q, energy):
 def energy_to_wavelength(energy):
     h = 4.135667696e-15  # eV * s
     c = 299792458e9  # nm / s
+    if isinstance(energy, str):
+        if energy == 'Ga':
+            energy = 9.2517e3
+        elif energy == 'Cu':
+            energy = 8.0478e3
+        else:
+            raise NotImplementedError
+    elif not isinstance(energy, (int, float, np.ndarray)):
+        raise ValueError
     return h * c / energy
