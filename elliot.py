@@ -183,12 +183,28 @@ def voigt(x: Union[int, float, ndarray], gaussian_hwhm: float, lorentzian_hwhm: 
     return np.real(wofz((x + 1j * lorentzian_hwhm) / sigma / np.sqrt(2))) / sigma / np.sqrt(2 * np.pi)
 
 
-def log_normal(x: Union[int, float, ndarray], sigma: float, mean: float):
-    return np.exp(-1 * np.power(np.log(x) - mean, 2) / (2 * np.power(sigma, 2))) / (x * sigma * np.sqrt(2 * np.pi))
+def log_normal(x: ndarray, sigma: float, mean: float):
+    """
+    Calculate a log normal distribution with specified standard deviation and mean. The distribution is assumed to be
+    zero for negative values.
+    :param x: Array of strictly increasing x values
+    :type x: ndarray
+    :param sigma: Standard deviation of the distribution
+    :type sigma: float
+    :param mean: Mean of the distribution
+    :type mean: float
+    :return: Evaluation of the profile at the x values
+    :rtype: ndarray
+    """
+    roi = np.where(x > 0)
+    below = np.zeros(len(x) - len(x[roi]))
+    above = (np.exp(-1 * np.power(np.log(x[roi]) - mean, 2) / (2 * np.power(sigma, 2)))
+             / (x[roi] * sigma * np.sqrt(2 * np.pi)))
+    return np.concatenate([below, above])
 
 
 def log_normal_normal(x, gaussian_hwhm, log_normal_sigma, log_normal_mean):
-    g = np.convolve(log_normal(x, log_normal_sigma, log_normal_mean), gaussian(x - x[int(len(x) / 2)], gaussian_hwhm),
+    g = np.convolve(log_normal(x, log_normal_sigma, log_normal_mean), gaussian(x, gaussian_hwhm),
                     mode='full') * (x[1] - x[0])
     energy_max = np.argmax(g)
     return g[energy_max - int(np.floor(len(x) / 2)):energy_max + int(np.ceil(len(x) / 2))] / (np.sum(g) * (x[1] - x[0]))
