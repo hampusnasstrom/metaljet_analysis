@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 import pyFAI
 
 from matplotlib import use
+from matplotlib.colors import LogNorm
 from HelpFunctions import progress, extend_mesh
 
 use('Qt5Agg')
@@ -75,11 +76,12 @@ if __name__ == "__main__":
     args['flat'] = 'None'
     args['mask'] = os.path.join(args['directory'], name + '_mask.edf')
     patterns = integrate_data(**args)
+    patterns.to_csv(os.path.join(sys.argv[1], name+'_reintegrated.csv'))
 
     fig, ax = plt.subplots()
     xrd_datetimes = patterns.index.values
     t_mesh = extend_mesh(xrd_datetimes - xrd_datetimes[0]).astype(float) * 1e-9
     q_mesh = extend_mesh(patterns.columns.values.astype(float))
-    ax.pcolormesh(t_mesh, q_mesh, patterns.values.T, cmap='magma')
+    ax.pcolormesh(t_mesh, q_mesh, patterns.values.T, norm=LogNorm(vmin=0.2), cmap='magma')
     ax.set_xlabel('Time / s')
     ax.set_ylabel(r'Scattering vector $q$ / nm$^{-1}$')

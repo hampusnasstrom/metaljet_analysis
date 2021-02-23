@@ -83,7 +83,7 @@ def two_theta_to_q(two_theta, energy):
 
 def energy_to_wavelength(energy):
     h = 4.135667696e-15  # eV * s
-    c = 299792458e9  # nm / s
+    c = 299792458.0e9  # nm / s
     if isinstance(energy, str):
         if energy == 'Ga':
             energy = 9.2517e3
@@ -94,6 +94,23 @@ def energy_to_wavelength(energy):
     elif not isinstance(energy, (int, float, np.ndarray)):
         raise ValueError
     return h * c / energy
+
+
+def wavelength_to_energy(wavelength):
+    h = 4.135667696e-15  # eV * s
+    c = 299792458.0e9  # nm / s
+    if isinstance(wavelength, str):
+        if wavelength == 'Ga':
+            energy = 9.2517e3
+        elif wavelength == 'Cu':
+            energy = 8.0478e3
+        else:
+            raise NotImplementedError
+    elif not isinstance(wavelength, (int, float, np.ndarray)):
+        raise ValueError
+    else:
+        energy = h * c / wavelength
+    return energy
 
 
 def lattice_from_hkl(hkl: np.array, q: np.array):
@@ -204,3 +221,37 @@ def poly(x, *p):
     for n in range(len(p)):
         y += p[n] * np.power(x, n)
     return y
+
+
+def gaussian_max(x_data, data):
+    intensity = []
+    position = []
+    fwhm = []
+    for line in range(data.shape[0]):
+        popt, pcov = curve_fit(lambda x, *p: gauss(x, p[0], p[1], p[2]) + poly(x, p[3], p[4]),
+                               xdata=x_data, ydata=data[line, :], p0=[np.max(data[line, :]),
+                                                                      x_data[np.argmax(data[line, :])], 25, 0, 0])
+        intensity.append(popt[0])
+        position.append(popt[1])
+        fwhm.append(popt[2] * 2 * np.sqrt(2 * np.log(2)))
+    return np.array(intensity), np.array(position), np.array(fwhm)
+
+
+def find_closest(array, target):
+    """
+    Taken from comment by Bi Rico on
+    https://stackoverflow.com/questions/8914491/finding-the-nearest-value-and-return-the-index-of-array-in-python
+
+    :param array:
+    :type array:
+    :param target:
+    :type target:
+    :return:
+    :rtype:
+    """
+    idx = array.searchsorted(target)
+    idx = np.clip(idx, 1, len(array)-1)
+    left = array[idx-1]
+    right = array[idx]
+    idx -= target - left < right - target
+    return idx
