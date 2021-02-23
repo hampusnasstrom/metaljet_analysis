@@ -167,7 +167,8 @@ def lorentzian(x: Union[int, float, ndarray], hwhm: float) -> Union[int, float, 
 
 def voigt(x: Union[int, float, ndarray], gaussian_hwhm: float, lorentzian_hwhm: float) -> Union[int, float, ndarray]:
     """
-    Calculate the Voigt profile at value(s) x
+    Calculate the Voigt profile at value(s) x.
+    Source: https://scipython.com/book/chapter-8-scipy/examples/the-voigt-profile/
     :param x: Value(s) for which to evaluate the profile
     :type x: Union[int, float, ndarray]
     :param gaussian_hwhm: Half width at half maximum of the Gaussian profile
